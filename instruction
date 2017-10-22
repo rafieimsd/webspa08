@@ -1,0 +1,2 @@
+mvn package -DskipTests
+java -jar webspa-0.8-SNAPSHOT.jar -checker

@@ -1,0 +1,32 @@
+
+The configuration of WebSpa, when running in server mode can
+be found in a file called:
+
+	'webspa-config.properties'
+	
+This file contains two (2) very important properties:
+
+1. access-log-file-location
+2. logging-regex-for-each-request
+
+1. The access-log-file-location property is the location within
+the filesystem where the access log file of the web server is.
+
+This has a default value:
+	'/var/log/apache2/access.log'
+	
+Which can be modified before starting webspa in server mode.
+
+2. The logging-regex-for-each-request property is the regular
+expression indicating where within each line of the access log
+file the IP address and part of the URL are located.
+
+This has a default value:
+	'^([\\d.]+) \\S+ \\S+ \\[[\\w:/]+\\s[+\\-]\\d{4}\\] \"GET /(\\S*) HTTP\\/[1-2]\\.[0-1]\" \\d{3} \\d+ \"[^\"]+\" \"[^\"]+\"'
+
+Which can also be modified before starting web-spa in server 
+mode.
+
+Please note that the regex specified must have exactly two 
+groups (i.e. two sets of brackets) the first one being the IP
+Address and the second being the HTTP GET request.
