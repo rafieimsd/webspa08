@@ -59,19 +59,21 @@ public class WSLogListener extends TailerListenerAdapter {
         	// Nest the world away!
         	LOGGER.info("The 100 chars received are {}.", webSpaRequest); 
             // Get the unique user ID from the request
-            final int ppID = myDatabase.passPhrases.getPPIDFromRequest(webSpaRequest);
-            
-            if(ppID < 0) {
+//            final int ppID = myDatabase.passPhrases.getPPIDFromRequest(webSpaRequest);
+            final int userID[] = myDatabase.users.getUSIDFromRequest(webSpaRequest);
+            //TODO amir connect to checker for check password index
+            // boolean isValidUser = checker(userID[0],userID[1]) 
+            if(userID[0] < 0) {
                 
             	LOGGER.info("No User Found");
             	
             } else {
 
-            	String username = myDatabase.users.getUsersFullName(ppID); 
+            	String username = myDatabase.users.getUsersFullName(userID[0]); 
             	LOGGER.info("User Found {}.", username);
             	// Check the user's activation status
-            	final boolean userActive = myDatabase.passPhrases.getActivationStatus(ppID);
-            	LOGGER.info(myDatabase.passPhrases.getActivationStatusString(ppID));
+            	final boolean userActive = myDatabase.users.getActivationStatus(userID[0]);
+            	LOGGER.info(myDatabase.users.getActivationStatusString(userID[0]));
             	
                 if(userActive) {
                 	
