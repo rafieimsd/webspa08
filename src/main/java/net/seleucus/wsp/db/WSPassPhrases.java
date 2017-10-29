@@ -128,6 +128,7 @@ public class WSPassPhrases {
 
 	public synchronized String getActivationStatusString(final int ppID) {
 		
+            
 		StringBuilder outputStatusBuffer = new StringBuilder(Byte.MAX_VALUE);
 		outputStatusBuffer.append("User with ID: ");
 		outputStatusBuffer.append(ppID);
