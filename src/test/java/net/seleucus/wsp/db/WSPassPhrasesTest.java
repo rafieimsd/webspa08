@@ -71,7 +71,7 @@ public class WSPassPhrasesTest {
 		final int ppID = 11;
 		
 		WSDatabase myDB = new WSDatabase();
-		myDB.users.addUser("FirstName LastName", passSeq, "some@email.com", "+1(808) 212 4455");
+//		myDB.users.addUser("FirstName LastName", "some@email.com", "+1(808) 212 4455");
 		
 		assertTrue(myDB.passPhrases.updatePassPhrase(ppID, passSeq));
 		

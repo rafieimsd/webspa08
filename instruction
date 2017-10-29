@@ -1,2 +1,7 @@
 mvn package -DskipTests
 java -jar webspa-0.8-SNAPSHOT.jar -checker
+
+hsqldb-sqltool --inlineRc url=jdbc:hsqldb:file:webspa-db,user=SA,password=
+hsqldb-sqltool --inlineRc url=jdbc:hsqldb:file:webspa-db,user=SA,password=
+
+
