@@ -68,6 +68,7 @@ public class WSLogListener extends TailerListenerAdapter {
             	LOGGER.info("No User Found");
             	
             } else {
+                
 
             	String username = myDatabase.users.getUsersFullName(userID[0]); 
             	LOGGER.info("User Found {}.", username);
