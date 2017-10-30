@@ -96,16 +96,16 @@ public class WSPassPhrases {
 		
 	}
 
-	public synchronized boolean getActivationStatus(int ppID) {
+	public synchronized boolean getActivationStatus(int usID) {
 		
 		boolean activationStatus = false;
 		
-		if(ppID > 0) {
+		if(usID > 0) {
 			
-			String sqlActivationLookup = "SELECT ACTIVE FROM PASSPHRASES WHERE PPID = ? ;";
+			String sqlActivationLookup = "SELECT ACTIVE FROM USERS WHERE USID = ? ;";
 			try {
 				PreparedStatement psPassPhrase = wsConnection.prepareStatement(sqlActivationLookup);
-				psPassPhrase.setInt(1, ppID);
+				psPassPhrase.setInt(1, usID);
 				ResultSet rs = psPassPhrase.executeQuery();
 				
 				if (rs.next()) {
@@ -126,20 +126,20 @@ public class WSPassPhrases {
 		return activationStatus;
 	}
 
-	public synchronized String getActivationStatusString(final int ppID) {
+	public synchronized String getActivationStatusString(final int usID) {
 		
             
 		StringBuilder outputStatusBuffer = new StringBuilder(Byte.MAX_VALUE);
 		outputStatusBuffer.append("User with ID: ");
-		outputStatusBuffer.append(ppID);
+		outputStatusBuffer.append(usID);
 		outputStatusBuffer.append(' ');
 		
-		String sqlActivationLookup = "SELECT ACTIVE FROM PASSPHRASES WHERE PPID = ? ;";
+		String sqlActivationLookup = "SELECT ACTIVE FROM USERS WHERE USID = ? ;";
 	
 		PreparedStatement psPassPhrase;
 		try {
 			psPassPhrase = wsConnection.prepareStatement(sqlActivationLookup);
-			psPassPhrase.setInt(1, ppID);
+			psPassPhrase.setInt(1, usID);
 			ResultSet rs = psPassPhrase.executeQuery();
 			
 			if (rs.next()) {
@@ -175,20 +175,20 @@ public class WSPassPhrases {
 		
 	}
 
-	public synchronized boolean toggleUserActivation(int ppID) {
+	public synchronized boolean toggleUserActivation(int usID) {
 	
 		boolean success = false;
 		
-		if(ppID > 0) {
+		if(usID > 0) {
 		
-			boolean currentActiveStatus = this.getActivationStatus(ppID);
+			boolean currentActiveStatus = this.getActivationStatus(usID);
 			boolean oppositeActiveStatus = !currentActiveStatus;
 			
-			String sqlUpdate = "UPDATE PASSPHRASES SET ACTIVE = ? WHERE PPID = ? ;";
+			String sqlUpdate = "UPDATE USERS SET ACTIVE = ? WHERE USID = ? ;";
 			try {
 				PreparedStatement ps = wsConnection.prepareStatement(sqlUpdate);
 				ps.setBoolean(1, oppositeActiveStatus);
-				ps.setInt(2, ppID);
+				ps.setInt(2, usID);
 				
 				ps.executeUpdate();
 				
