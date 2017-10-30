@@ -4,6 +4,7 @@ package net.seleucus.wsp.checker;
  *
  * @author masoud
  */
+import java.sql.SQLException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -15,16 +16,54 @@ import net.seleucus.wsp.main.WebSpa;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang3.ArrayUtils;
 import java.util.Random;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import net.seleucus.wsp.client.WSClient;
+import net.seleucus.wsp.client.WSConnection;
+import net.seleucus.wsp.client.WSRequestBuilder;
+import net.seleucus.wsp.config.WSConfiguration;
+import net.seleucus.wsp.db.WSDatabase;
+import net.seleucus.wsp.server.WSLogListener;
+import net.seleucus.wsp.server.WSServerConsole;
+import net.seleucus.wsp.util.WSUtil;
+import org.apache.commons.io.input.Tailer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class WSChecker extends WSGestalt {
 
+    private Tailer myLogTailer;
+    private ExecutorService myExecService;
+
+    private boolean serviceStarted;
+    private WSDatabase myDatabase;
+    private WSCheckerListener myLogListener;
+    private WSConfiguration myConfiguration;
+    private WSCheckerConsole myCheckerCommand;
+
     private final static Logger LOGGER = LoggerFactory.getLogger(WSClient.class);
 
-    public WSChecker(final WebSpa myWebSpa) {
+    public WSChecker(final WebSpa myWebSpa) throws Exception {
         super(myWebSpa);
+
+        myLogTailer = null;
+        myExecService = Executors.newSingleThreadExecutor();
+
+        serviceStarted = false;
+
+        myDatabase = new WSDatabase();
+        myConfiguration = new WSConfiguration();
+
+        myLogListener = new WSCheckerListener(this);
+        myCheckerCommand = new WSCheckerConsole(this);
+    }
+
+    public WSConfiguration getWSConfiguration() {
+        return myConfiguration;
+    }
+
+    public WSDatabase getWSDatabase() {
+        return myDatabase;
     }
 
     @Override
@@ -33,7 +72,43 @@ public class WSChecker extends WSGestalt {
     }
 
     @Override
-    public void runConsole() {
+    public void runConsole() throws SQLException {
+
+        LOGGER.info("-------Honey Checker------");
+        LOGGER.info("WebSpa - Single HTTP/S Request Authorisation");
+        LOGGER.info("version " + WSVersion.getValue() + " (WebSpa@seleucus.net)");
+        LOGGER.info("");
+        LOGGER.info("This is a holding prompt, type \"exit\" or \"x\" to quit");
+        LOGGER.info("");
+        LOGGER.info("Type \"service start\" to start the WebSpa server");
+        LOGGER.info("Type \"help\" or \"?\" for more options");
+        LOGGER.info("");
+
+        do {
+
+            String command = readLineServerPrompt();
+
+            if ("laterz".equalsIgnoreCase(command)
+                    || "exit".equalsIgnoreCase(command)
+                    || "quit".equalsIgnoreCase(command)
+                    || "bye".equalsIgnoreCase(command)
+                    || "x".equalsIgnoreCase(command)) {
+
+                this.shutdown();
+
+                break;
+
+            } else {
+
+                this.processCommand(command);
+            }
+
+        } while (true);
+
+    }
+
+//    @Override
+    public void runConsoleOld() {
 
         LOGGER.info("");
         LOGGER.info("WebSpa - Single HTTP/S Request Authorisation- ");
@@ -71,10 +146,10 @@ public class WSChecker extends WSGestalt {
             char tempChar = 'x';
             for (int j = 0; j < lenght; j++) {
 //                System.out.println("jj: "+j+" tempPass "+tempPass);
-                int tempInt = (Character.getNumericValue(tempChar)==0 ? i+1 : Character.getNumericValue(tempChar));
-                tempInt=((tempInt%4)==0 ? (tempInt%4)+1 : tempInt%4 );
+                int tempInt = (Character.getNumericValue(tempChar) == 0 ? i + 1 : Character.getNumericValue(tempChar));
+                tempInt = ((tempInt % 4) == 0 ? (tempInt % 4) + 1 : tempInt % 4);
 //                System.out.println("tempInt: "+tempInt+" i+j: "+(i+j)+"%%%% "+((j+i) % tempInt));
-                tempChar = ( ((j+i) % tempInt) == 0 ? getCharSeed() : getIntSeed());
+                tempChar = (((j + i) % tempInt) == 0 ? getCharSeed() : getIntSeed());
                 tempPass += tempChar;
 //                System.out.println("tempPass: " + tempPass);
 
@@ -123,4 +198,49 @@ public class WSChecker extends WSGestalt {
         return seed.substring(seed.length() - 1).toCharArray()[0];
     }
 
+    public void processCommand(final String command) {
+
+        myCheckerCommand.executeCommand(command.trim());
+
+    }
+public void serverStatus() {
+		
+		if(serviceStarted) {
+			
+			LOGGER.info("WebSpa is Running!");
+			
+		} else {
+			
+			LOGGER.info("WebSpa is Stopped.");
+			
+		}
+	}
+    public void shutdown() throws SQLException {
+
+        if (serviceStarted == true) {
+
+            this.checkerStop();
+
+        }
+
+        myDatabase.shutdown();
+    }
+
+    public void checkerStop() {
+
+        if (myLogTailer == null) {
+
+            LOGGER.info("WebSpa Server Had Not Started");
+
+        } else {
+
+            LOGGER.info("WebSpa Server Stopped");
+            myLogTailer.stop();
+
+            myLogTailer = null;
+            serviceStarted = false;
+
+        }
+
+    }
 }

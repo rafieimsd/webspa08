@@ -13,17 +13,17 @@ public class WSAction implements Callable<Boolean> {
 	
 	private final WSServer myServer;
 	private final int action;
-	private final int ppID;
+	private final int usID;
 	private final String ipAddress;
 	
-	public WSAction(final WSServer myServer, final int ppID, final int action, final String ipAddress) {
+	public WSAction(final WSServer myServer, final int usID, final int action, final String ipAddress) {
 		
 		this.myServer = myServer;
 		this.action = action;
-		this.ppID = ppID;
+		this.usID = usID;
 		this.ipAddress = ipAddress;
 		
-		this.command = myServer.getWSDatabase().actionsAvailable.getOSCommand(ppID, action);
+		this.command = myServer.getWSDatabase().actionsAvailable.getOSCommand(usID, action);
 		
 		stdOutBuilder = new StringBuilder();
 		stdErrorBuilder = new StringBuilder();
@@ -84,7 +84,7 @@ public class WSAction implements Callable<Boolean> {
 			
 		}
 		
-		myServer.getWSDatabase().actionsAvailable.updateAction(ppID, action, success, ipAddress);
+		myServer.getWSDatabase().actionsAvailable.updateAction(usID, action, success, ipAddress);
 		
 		return success;
 		
