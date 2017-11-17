@@ -1,8 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package net.seleucus.wsp.checker;
 
 /**
@@ -10,24 +5,16 @@ package net.seleucus.wsp.checker;
  * @author masoud
  */
 import java.util.ArrayList;
-import net.seleucus.wsp.server.WSServer;
+import net.seleucus.wsp.checker.WSChecker;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import net.seleucus.wsp.server.commands.WSActionAdd;
-import net.seleucus.wsp.server.commands.WSActionShow;
-import net.seleucus.wsp.server.commands.WSCommandOption;
-import net.seleucus.wsp.server.commands.WSConfigShow;
-import net.seleucus.wsp.server.commands.WSHelpOptions;
-import net.seleucus.wsp.server.commands.WSPassPhraseModify;
-import net.seleucus.wsp.server.commands.WSPassPhraseShow;
-import net.seleucus.wsp.server.commands.WSServiceStart;
-import net.seleucus.wsp.server.commands.WSServiceStatus;
-import net.seleucus.wsp.server.commands.WSServiceStop;
-import net.seleucus.wsp.server.commands.WSUserActivate;
-import net.seleucus.wsp.server.commands.WSUserAdd;
-import net.seleucus.wsp.server.commands.WSUserShow;
+import net.seleucus.wsp.checker.commands.WSCommandOption;
+
+import net.seleucus.wsp.checker.commands.WSServiceStart;
+import net.seleucus.wsp.checker.commands.WSServiceStatus;
+import net.seleucus.wsp.checker.commands.WSServiceStop;
 
 public class WSCheckerConsole {
 

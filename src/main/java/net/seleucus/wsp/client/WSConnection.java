@@ -1,6 +1,8 @@
 package net.seleucus.wsp.client;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -9,6 +11,8 @@ import java.security.cert.Certificate;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
 import java.util.Locale;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.HttpsURLConnection;
@@ -45,13 +49,13 @@ public class WSConnection {
 
         action = 0;
         response = 0;
-        System.out.println("----0");
+
         try {
 
             URL knockURL = new URL(knock);
-            System.out.println("----1");
+
             if (knockURL.getProtocol().toLowerCase().equals("https")) {
-                System.out.println("----2");
+
                 action = 5;
                 trustAllHosts();
                 HttpsURLConnection https = (HttpsURLConnection) knockURL.openConnection();
@@ -66,20 +70,20 @@ public class WSConnection {
                 });
                 connection = https;
             } else {
-                System.out.println("----3");
+
                 action = 4;
                 connection = (HttpURLConnection) knockURL.openConnection();
             }
-            System.out.println("----4");
+
             setRequestProperties();
 
         } catch (MalformedURLException e) {
             e.printStackTrace();
-            System.out.println("----5");
+
             action = 2;
 
         } catch (IOException e) {
-            System.out.println("----6");
+
             action = 3;
 
         }
@@ -137,6 +141,22 @@ public class WSConnection {
 
             }
         }
+    }
+
+    public String getIncomeResponseString() {
+        StringBuffer sb = new StringBuffer();
+        try {
+            BufferedReader in = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+            String tempLine;
+            while ((tempLine = in.readLine()) != null) {
+                sb.append(tempLine);
+            }
+            in.close();
+        } catch (IOException ex) {
+            Logger.getLogger(WSConnection.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        return sb.toString();
+
     }
 
     public String responseCode() {

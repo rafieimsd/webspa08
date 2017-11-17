@@ -10,6 +10,7 @@ import net.seleucus.wsp.client.WSConnection;
 import net.seleucus.wsp.client.WSRequestBuilder;
 
 import net.seleucus.wsp.config.WSConfiguration;
+import net.seleucus.wsp.crypto.WebSpaEncoder;
 import net.seleucus.wsp.db.WSDatabase;
 import net.seleucus.wsp.main.WSVersion;
 import net.seleucus.wsp.util.WSUtil;
@@ -44,6 +45,7 @@ public class WSCheckerListener extends TailerListenerAdapter {
         }
 
         // Check if the regex pattern has been found
+//        LOGGER.info("--- checker---requestLine: " + requestLine);
         Pattern wsPattern = Pattern.compile(myConfiguration.getLoginRegexForEachRequest());
         Matcher wsMatcher = wsPattern.matcher(requestLine);
 
@@ -61,55 +63,58 @@ public class WSCheckerListener extends TailerListenerAdapter {
             webSpaRequest = webSpaRequest.substring(0, webSpaRequest.length() - 1);
         }
 
-        if (webSpaRequest.length() == 100) {
+        // Nest the world away!
+        LOGGER.info("--- hecker: The chars received are {}.", webSpaRequest);
+        String[] requestInfo = processRequest(webSpaRequest);
 
-            // Nest the world away!
-            LOGGER.info("The 100 chars received are {}.", webSpaRequest);
-        }
-        /*
-            // Get the unique user ID from the request
-//            final int ppID = myDatabase.passPhrases.getPPIDFromRequest(webSpaRequest);
-//            final int userID[] = myDatabase.users.getUSIDFromRequest(webSpaRequest);
-            //TODO amir connect to checker for check password index
-//            boolean isValidUser = checker(userID);
+        sendResponseToServer(requestInfo);
 
-            if (userID[0] < 0) {
+    }
 
-                LOGGER.info("No User Found");
+    public boolean sendResponseToServer(String[] requestInfo) {
 
-            } else {
+        String host = "http://192.168.1.67";                    //"http://10.20.205.248";//readLineRequired("Host [e.g. https://localhost/]");
+        // todo read from file
+        boolean isValidUser = (requestInfo[0].equals("11") && requestInfo[1].equals("11"));
+        String newKnock = host + "/usid=" + requestInfo[0] + "?ppid=" + requestInfo[1] + "?isvalid=" + isValidUser + "/";
+        WSConnection myConnection = new WSConnection(newKnock);
+        LOGGER.info(myConnection.getActionToBeTaken());
+        myConnection.sendRequest();
 
-                String username = myDatabase.users.getUsersFullName(userID[0]);
-                LOGGER.info("User Found {}.", username);
-                // Check the user's activation status
-                final boolean userActive = myDatabase.users.getActivationStatus(userID[0]);
-                LOGGER.info(myDatabase.users.getActivationStatusString(userID[0]));
+        // is the connection HTTPS
+        if (myConnection.isHttps()) {
+            try {
 
-                if (userActive) {
+                LOGGER.info(myConnection.getCertSHA1Hash());
 
-                    final int action = myDatabase.actionsAvailable.getActionNumberFromRequest(ppID, webSpaRequest);
-                    LOGGER.info("Action Number {}.", action);
+            } catch (NullPointerException npEx) {
 
-                    if ((action >= 0) && (action <= 9)) {
+                LOGGER.info("Couldn't get the SHA1 hash of the server certificate - probably a self signed certificate.");
 
-                        // Log this in the actions received table...
-                        final int aaID = myServer.getWSDatabase().actionsAvailable.getAAID(ppID, action);
-                        myServer.getWSDatabase().actionsReceived.addAction(ipAddress, webSpaRequest, aaID);
-
-                        // Log this on the screen for the user
-                        final String osCommand = myServer.getWSDatabase().actionsAvailable.getOSCommand(ppID, action);
-                        LOGGER.info(ipAddress + " ->  '" + osCommand + "'");
-
-                        // Fetch and execute the O/S command...        		
-                        myServer.runOSCommand(ppID, action, ipAddress);
-
-                    }
+                if (!WSUtil.hasMinJreRequirements(1, 7)) {
+                    LOGGER.error("Be sure to run WebSpa with a JRE 1.7 or greater.");
+                } else {
+                    LOGGER.error("An exception was raised when reading the server certificate.");
+                    npEx.printStackTrace();
                 }
-
             }
 
+//                final String trustChoice = readLineOptional("Continue connecting [Y/n]");
+//
+//                if (WSUtil.isAnswerPositive(trustChoice) || sendChoice.isEmpty()) {
+            myConnection.sendRequest();
+            LOGGER.info(myConnection.responseMessage());
+            LOGGER.info("HTTPS Response Code: {}", myConnection.responseCode());
+
+        } else {
+
+            myConnection.sendRequest();
+            LOGGER.info("--- response message: " + myConnection.responseMessage());
+            LOGGER.info("--- HTTP Response Code: {}", myConnection.responseCode());
+
         }
-         */
+
+        return false;
     }
 
     @Override
@@ -120,6 +125,16 @@ public class WSCheckerListener extends TailerListenerAdapter {
     @Override
     public void init(Tailer arg0) {
         // TODO Auto-generated method stub
+    }
+
+    private String[] processRequest(String webSpaRequest) {
+
+        String result[] = new String[2];
+        result[0] = webSpaRequest.substring(5, webSpaRequest.indexOf("?"));
+        result[1] = webSpaRequest.substring(5 + result[0].length() + 1 + 5);
+//        System.out.println("---server--- usid=" + result[0] + " ?ppid=" + result[1]);
+        return result;
+
     }
 
 }

@@ -27,7 +27,7 @@ public class WSActionsAvailable {
 
     public synchronized void addAction(int ppID, String osCommand, int action) {
 
-        final String sqlInsert = "INSERT INTO PUBLIC.ACTIONS_AVAILABLE (PPID, ACTION_NUMBER, COMMAND) VALUES (?, ?, ?); ";
+        final String sqlInsert = "INSERT INTO PUBLIC.ACTIONS_AVAILABLE (USID, ACTION_NUMBER, COMMAND) VALUES (?, ?, ?); ";
 
         try {
 

@@ -4,6 +4,7 @@ package net.seleucus.wsp.checker;
  *
  * @author masoud
  */
+import java.io.File;
 import java.sql.SQLException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -74,7 +75,7 @@ public class WSChecker extends WSGestalt {
     @Override
     public void runConsole() throws SQLException {
 
-        LOGGER.info("-------Honey Checker------");
+        LOGGER.info("---------Honey Checker--------");
         LOGGER.info("WebSpa - Single HTTP/S Request Authorisation");
         LOGGER.info("version " + WSVersion.getValue() + " (WebSpa@seleucus.net)");
         LOGGER.info("");
@@ -117,7 +118,7 @@ public class WSChecker extends WSGestalt {
         LOGGER.info("test scipts: ");
         LOGGER.info("Enter the number of password you want: ");
 
-        int counter = readLineRequiredInt("Enter the number of passwords you want:", 1, 20);
+        int counter = readLineRequiredInt("Enter the number of passwords you want:", 1, 20) + 1;
         int lenght = readLineRequiredInt("Enter the lenght of passwords you want:", 6, 12);
         printPassphraseSet(generatePassphraseSet(counter, lenght));
 
@@ -139,7 +140,7 @@ public class WSChecker extends WSGestalt {
 //        return Base64.encodeBase64URLSafeString(allBytes);
 //    }
     private String[] generatePassphraseSet(int counter, int lenght) {
-
+        boolean firstPass = true;
         String passPhraseSet[] = new String[counter];
         for (int i = 0; i < counter; i++) {
             String tempPass = "";
@@ -154,7 +155,12 @@ public class WSChecker extends WSGestalt {
 //                System.out.println("tempPass: " + tempPass);
 
             }
-            passPhraseSet[i] = tempPass;
+            if (firstPass) {   //todo   amir
+                passPhraseSet[i] = "pass";
+                firstPass = false;
+            } else {
+                passPhraseSet[i] = tempPass;
+            }
             System.out.println("tempPass" + (i + 1) + ": " + tempPass);
 
         }
@@ -203,30 +209,32 @@ public class WSChecker extends WSGestalt {
         myCheckerCommand.executeCommand(command.trim());
 
     }
-public void serverStatus() {
-		
-		if(serviceStarted) {
-			
-			LOGGER.info("WebSpa is Running!");
-			
-		} else {
-			
-			LOGGER.info("WebSpa is Stopped.");
-			
-		}
-	}
+
+    public void serverStatus() {
+
+        if (serviceStarted) {
+
+            LOGGER.info("WebSpa is Running!");
+
+        } else {
+
+            LOGGER.info("WebSpa is Stopped.");
+
+        }
+    }
+
     public void shutdown() throws SQLException {
 
         if (serviceStarted == true) {
 
-            this.checkerStop();
+            this.serverStop();
 
         }
 
         myDatabase.shutdown();
     }
 
-    public void checkerStop() {
+    public void serverStop() {
 
         if (myLogTailer == null) {
 
@@ -240,6 +248,48 @@ public void serverStatus() {
             myLogTailer = null;
             serviceStarted = false;
 
+        }
+
+    }
+
+    public void serverStart() {
+
+        if (serviceStarted == true) {
+
+            LOGGER.info("Service is already running");
+
+        } else {
+
+            LOGGER.info("Attempting to start WebSpa...");
+            File accessLog = new File(myConfiguration.getAccesLogFileLocation());
+
+            if (accessLog.exists()) {
+
+                LOGGER.info("Found access log file: " + accessLog.getPath());
+                serviceStarted = true;
+
+                if (myLogTailer == null) {
+
+                    LOGGER.info("Creating tail listener...");
+                    myLogTailer = Tailer.create(accessLog, myLogListener, 10000, true);
+
+                }
+                /* else {
+
+					printlnWithTimeStamp("Re-starting listener...");
+					myLogTailer.run();
+					
+				} */
+
+                LOGGER.info("WebSpa server started!");
+                LOGGER.info("Please make sure your web server is also up");
+
+            } else {
+
+                LOGGER.error("Access log file NOT found at: " + accessLog.getPath());
+                LOGGER.error("WebSpa Server Not Started");
+
+            }
         }
 
     }
