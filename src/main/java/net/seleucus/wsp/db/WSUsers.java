@@ -147,7 +147,7 @@ public class WSUsers {
         resultsBuffer.append("-----------------------------------------------------------");
         resultsBuffer.append('\n');
 
-        final String sqlPassUsers = "SELECT USID,'FALSE', FULLNAME, MODIFIED FROM  USERS ;";
+        final String sqlPassUsers = "SELECT USID,active, FULLNAME, MODIFIED FROM  USERS ;";
 
         try {
 
@@ -178,7 +178,7 @@ public class WSUsers {
 
     public synchronized int[] getUSIDFromRequest(final String webSpaRequest) {
 
-        int[] output = {-1,-1};
+        int[] output = {-1, -1};
         final String sqlPassPhrases = "SELECT PASSPHRASE, USID,PPID FROM PASSPHRASES;";
 
         try {
@@ -191,7 +191,6 @@ public class WSUsers {
                 final int dbUSID = rs.getInt(2);
                 final int dbPPID = rs.getInt(3);
                 CharSequence rawPassword = CharBuffer.wrap(dbPassPhraseArray);
-
                 if (WebSpaEncoder.matches(rawPassword, webSpaRequest)) {
 
                     output[0] = dbUSID;
@@ -214,80 +213,136 @@ public class WSUsers {
         return output;
 
     }
+
+    
     public synchronized boolean getActivationStatus(int usID) {
-		
-		boolean activationStatus = false;
-		
-		if(usID > 0) {
-			
-			String sqlActivationLookup = "SELECT ACTIVE FROM USERS WHERE USID = ? ;";
-			try {
-				PreparedStatement psPassPhrase = wsConnection.prepareStatement(sqlActivationLookup);
-				psPassPhrase.setInt(1, usID);
-				ResultSet rs = psPassPhrase.executeQuery();
-				
-				if (rs.next()) {
-					activationStatus = rs.getBoolean(1);
-				}
-				
-				rs.close();
-				psPassPhrase.close();
-				
-			} catch (SQLException ex) {
-	
-				 LOGGER.error("Get Activation Status - A Database exception has occured: {}.", ex.getMessage());	
-	
-			}
-			
-		} // ppID > 0
-		
-		return activationStatus;
-	}
+
+        boolean activationStatus = false;
+
+        if (usID > 0) {
+
+            String sqlActivationLookup = "SELECT ACTIVE FROM USERS WHERE USID = ? ;";
+            try {
+                PreparedStatement psPassPhrase = wsConnection.prepareStatement(sqlActivationLookup);
+                psPassPhrase.setInt(1, usID);
+                ResultSet rs = psPassPhrase.executeQuery();
+
+                if (rs.next()) {
+                    activationStatus = rs.getBoolean(1);
+                }
+
+                rs.close();
+                psPassPhrase.close();
+
+            } catch (SQLException ex) {
+
+                LOGGER.error("Get Activation Status - A Database exception has occured: {}.", ex.getMessage());
+
+            }
+
+        } // ppID > 0
+
+        return activationStatus;
+    }
+
     public synchronized String getActivationStatusString(final int usID) {
-		
-		StringBuilder outputStatusBuffer = new StringBuilder(Byte.MAX_VALUE);
-		outputStatusBuffer.append("User with ID: ");
-		outputStatusBuffer.append(usID);
-		outputStatusBuffer.append(' ');
-		
-		String sqlActivationLookup = "SELECT ACTIVE FROM USERS WHERE USID = ? ;";
-	
-		PreparedStatement psPassPhrase;
-		try {
-			psPassPhrase = wsConnection.prepareStatement(sqlActivationLookup);
-			psPassPhrase.setInt(1, usID);
-			ResultSet rs = psPassPhrase.executeQuery();
-			
-			if (rs.next()) {
-				
-				boolean activationStatus = rs.getBoolean(1);
-				
-				if(activationStatus == true) {
-					
-					outputStatusBuffer.append("is active");
-					
-				} else {
-					
-					outputStatusBuffer.append("is in-active");
-					
-				}
-				
-			} else {
-				
-				outputStatusBuffer.append("does not exist");
-				
-			}
-			
-			rs.close();
-			psPassPhrase.close();
-			
-		} catch (SQLException ex) {
-			
-			 LOGGER.error("Get Activation Status String - A Database exception has occured: {}.", ex.getMessage());	
-			
-		}
-	
-		return outputStatusBuffer.toString();
-		
-	}
+
+        StringBuilder outputStatusBuffer = new StringBuilder(Byte.MAX_VALUE);
+        outputStatusBuffer.append("User with ID: ");
+        outputStatusBuffer.append(usID);
+        outputStatusBuffer.append(' ');
+
+        String sqlActivationLookup = "SELECT ACTIVE FROM USERS WHERE USID = ? ;";
+
+        PreparedStatement psPassPhrase;
+        try {
+            psPassPhrase = wsConnection.prepareStatement(sqlActivationLookup);
+            psPassPhrase.setInt(1, usID);
+            ResultSet rs = psPassPhrase.executeQuery();
+
+            if (rs.next()) {
+
+                boolean activationStatus = rs.getBoolean(1);
+
+                if (activationStatus == true) {
+
+                    outputStatusBuffer.append("is active");
+
+                } else {
+
+                    outputStatusBuffer.append("is in-active");
+
+                }
+
+            } else {
+
+                outputStatusBuffer.append("does not exist");
+
+            }
+
+            rs.close();
+            psPassPhrase.close();
+
+        } catch (SQLException ex) {
+
+            LOGGER.error("Get Activation Status String - A Database exception has occured: {}.", ex.getMessage());
+
+        }
+
+        return outputStatusBuffer.toString();
+
+    }
+
+    public boolean addToWaitingList(int usId, int ppId) {
+        boolean result = false;
+        try {
+            String sql = "INSERT INTO USERS_VALIDATION_QUEUE (USID,P_INDEX,IS_VALID,IS_WAITING, CREATED) VALUES ("
+                    + "?,?,?,?, CURRENT_TIMESTAMP);";
+
+            LOGGER.info("Adding RECORD {} to the INTO USERS_VALIDATION_QUEUE...", usId);
+
+            PreparedStatement ps = wsConnection.prepareStatement(sql);
+//            psUsers.setString(1, passSeq.toString());
+            ps.setString(1, String.valueOf(usId));
+            ps.setString(2, String.valueOf(ppId));
+            ps.setString(3, String.valueOf(false));
+            ps.setString(4, String.valueOf(true));
+            ps.executeUpdate();
+
+            ps.close();
+
+            LOGGER.info("record {} added.", usId);
+            result = true;
+        } catch (Exception ee) {
+            result = false;
+        }
+        return result;
+    }
+
+    public boolean updateWaitingList(int usId, int ppId, boolean isValid) {
+        boolean result = false;
+        try {
+            String sql = "update  USERS_VALIDATION_QUEUE set IS_VALID=?,IS_WAITING=?,MODIFIED=CURRENT_TIMESTAMP "
+                    + " WHERE USID=? AND P_INDEX=? AND IS_WAITING=TRUE;";
+
+            LOGGER.info("UPDATING RECORD {} OF the INTO USERS_VALIDATION_QUEUE...", usId);
+
+            PreparedStatement ps = wsConnection.prepareStatement(sql);
+//            psUsers.setString(1, passSeq.toString());
+            ps.setString(1, String.valueOf(isValid));
+            ps.setString(2, String.valueOf(false));
+            ps.setString(3, String.valueOf(usId));
+            ps.setString(4, String.valueOf(ppId));
+            ps.executeUpdate();
+
+            ps.close();
+
+            LOGGER.info("record {} updated.", usId);
+            result = true;
+        } catch (Exception ee) {
+            ee.printStackTrace();
+            result = false;
+        }
+        return result;
+    }
 }
