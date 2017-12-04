@@ -1,18 +1,27 @@
 package net.seleucus.wsp.server;
 
 import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileReader;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.sql.PreparedStatement;
+import java.util.Properties;
+import java.util.logging.Level;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import net.seleucus.wsp.checker.WSCheckerListener;
 import net.seleucus.wsp.client.WSConnection;
 import net.seleucus.wsp.client.WSRequestBuilder;
 
 import net.seleucus.wsp.config.WSConfiguration;
 import net.seleucus.wsp.db.WSDatabase;
 import net.seleucus.wsp.main.WSVersion;
+import net.seleucus.wsp.util.WSConstants;
 import net.seleucus.wsp.util.WSUtil;
 
 import org.apache.commons.io.input.Tailer;
@@ -130,70 +139,82 @@ public class WSLogListener extends TailerListenerAdapter {
 
         LOGGER.info("");
         LOGGER.info("WebSpa - Single HTTP/S Request Authorisation");
-//        LOGGER.info("version " + WSVersion.getValue() + " (webspa@seleucus.net)");
+        try {
+            //        LOGGER.info("version " + WSVersion.getValue() + " (webspa@seleucus.net)");
 //        LOGGER.info("");
+            WSConfiguration myConfig = new WSConfiguration();
 
-        String host = "http://192.168.1.70";                    //"http://10.20.205.248";//readLineRequired("Host [e.g. https://localhost/]");
-        CharSequence usId = String.valueOf(userID[0]);          //readPasswordRequired("Your pass-phrase for that host");
-        int ppId = userID[1];                                   //readLineRequiredInt("The action number", 0, 9);
-        //        WSRequestBuilder myClient = new WSRequestBuilder(host, "ebrahim", 176);
+//            URL bundledConfigLocation = ClassLoader
+//                    .getSystemResource("config/bundled-webspa-config.properties");
+//
+//            FileInputStream in = new FileInputStream(new File(bundledConfigLocation.toURI()));
+//            Properties configProperties = new Properties();
+//            configProperties.load(in);
+//            in.close();
+LOGGER.info("--1--");
+            String checkerURL = WSUtil.readURL();//"http://192.168.1.70";                    //configProperties.getProperty(WSConstants.CHECKER_IP);//"http://10.20.205.248";//readLineRequired("Host [e.g. https://localhost/]");
+LOGGER.info("--2--"+checkerURL);
+//            LOGGER.info("-----test pro " + configProperties.getProperty(WSConstants.ACCESS_LOG_FILE_LOCATION));
+//            LOGGER.info("-----host " + host);
+            CharSequence usId = String.valueOf(userID[0]);          //readPasswordRequired("Your pass-phrase for that host");
+            int ppId = userID[1];                                   //readLineRequiredInt("The action number", 0, 9);
+            //        WSRequestBuilder myClient = new WSRequestBuilder(host, "ebrahim", 176);
 //        String knock = myClient.getKnock();
 //
 //        LOGGER.info("\n--amir--Your WebSpa Knock is: {}", knock);
-        String newKnock = host + "/usId=" + usId + "?ppid=" + ppId + "/";
-        WSConnection myConnection = new WSConnection(newKnock);
-        LOGGER.info(myConnection.getActionToBeTaken());
-        myConnection.sendRequest();
+            String newKnock = checkerURL + "/usId=" + usId + "?ppid=" + ppId + "/";
+            WSConnection myConnection = new WSConnection(newKnock);
+            LOGGER.info(myConnection.getActionToBeTaken());
+            myConnection.sendRequest();
 
-//        LOGGER.info("--amir-- first response response message: " + myConnection.getIncomeResponseString());
-//        LOGGER.info("\n--amir-- first request response message: " + myConnection.responseMessage());
-//        LOGGER.info("\n--amir-- HTTP first Response Code: {}", myConnection.responseCode());
-        // is the connection HTTPS
-        if (myConnection.isHttps()) {
-            // TODO add known hosts check and handling here
-            // get fingerprint and algorithm from certificate
-            // myConnection.getCertificateAlgorithm()
-            // myConnection.getCertificateFingerprint()
+            // is the connection HTTPS
+            if (myConnection.isHttps()) {
+                // TODO add known hosts check and handling here
+                // get fingerprint and algorithm from certificate
+                // myConnection.getCertificateAlgorithm()
+                // myConnection.getCertificateFingerprint()
 
-            // get fingerprint from known hosts file
-            // WSKnownHosts.getFingerprint(host-ip, algorithm)
-            // if a fingerprint is found compare fingerprints, if not equal warn and exit
-            // else ask to store new fingerprint to known hosts
-            // WSKnownHosts.store...(host-ip, algorithm, fingerprint);
-            try {
+                // get fingerprint from known hosts file
+                // WSKnownHosts.getFingerprint(host-ip, algorithm)
+                // if a fingerprint is found compare fingerprints, if not equal warn and exit
+                // else ask to store new fingerprint to known hosts
+                // WSKnownHosts.store...(host-ip, algorithm, fingerprint);
+                try {
 
-                LOGGER.info(myConnection.getCertSHA1Hash());
+                    LOGGER.info(myConnection.getCertSHA1Hash());
 
-            } catch (NullPointerException npEx) {
+                } catch (NullPointerException npEx) {
 
-                LOGGER.info("Couldn't get the SHA1 hash of the server certificate - probably a self signed certificate.");
+                    LOGGER.info("Couldn't get the SHA1 hash of the server certificate - probably a self signed certificate.");
 
-                if (!WSUtil.hasMinJreRequirements(1, 7)) {
-                    LOGGER.error("Be sure to run WebSpa with a JRE 1.7 or greater.");
-                } else {
-                    LOGGER.error("An exception was raised when reading the server certificate.");
-                    npEx.printStackTrace();
+                    if (!WSUtil.hasMinJreRequirements(1, 7)) {
+                        LOGGER.error("Be sure to run WebSpa with a JRE 1.7 or greater.");
+                    } else {
+                        LOGGER.error("An exception was raised when reading the server certificate.");
+                        npEx.printStackTrace();
+                    }
                 }
-            }
 
 //                final String trustChoice = readLineOptional("Continue connecting [Y/n]");
 //
 //                if (WSUtil.isAnswerPositive(trustChoice) || sendChoice.isEmpty()) {
-            myConnection.sendRequest();
-            LOGGER.info(myConnection.responseMessage());
-            LOGGER.info("HTTPS Response Code: {}", myConnection.responseCode());
-            myDatabase.users.addToWaitingList(userID[0], ppId);
+                myConnection.sendRequest();
+                LOGGER.info(myConnection.responseMessage());
+                LOGGER.info("HTTPS Response Code: {}", myConnection.responseCode());
+                myDatabase.users.addToWaitingList(userID[0], ppId);
 
-        } else {
+            } else {
 
-            myConnection.sendRequest();
+                myConnection.sendRequest();
 //            LOGGER.info("--amir-- first response response message: " + myConnection.getIncomeResponseString());
-            LOGGER.info("--- response message: " + myConnection.responseMessage());
-            LOGGER.info("--- HTTP Response Code: {}", myConnection.responseCode());
-            myDatabase.users.addToWaitingList(userID[0], ppId);
+                LOGGER.info("\n--- response message: " + myConnection.responseMessage());
+                LOGGER.info("\n--- HTTP Response Code: {}", myConnection.responseCode());
+                myDatabase.users.addToWaitingList(userID[0], ppId);
 
-        }
-
+            }
+        } catch (IOException ex) {
+            java.util.logging.Logger.getLogger(WSLogListener.class.getName()).log(Level.SEVERE, null, ex);
+        } 
         return false;
     }
 

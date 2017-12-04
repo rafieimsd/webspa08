@@ -4,6 +4,17 @@ package net.seleucus.wsp.checker;
  *
  * @author masoud
  */
+import net.seleucus.wsp.util.WSConstants;
+
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileReader;
+import java.io.IOException;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.util.Properties;
+import java.util.logging.Level;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import net.seleucus.wsp.client.WSConnection;
@@ -64,7 +75,7 @@ public class WSCheckerListener extends TailerListenerAdapter {
         }
 
         // Nest the world away!
-        LOGGER.info("--- hecker: The chars received are {}.", webSpaRequest);
+        LOGGER.info("--- checker: The chars received are {}.", webSpaRequest);
         String[] requestInfo = processRequest(webSpaRequest);
 
         sendResponseToServer(requestInfo);
@@ -72,46 +83,62 @@ public class WSCheckerListener extends TailerListenerAdapter {
     }
 
     public boolean sendResponseToServer(String[] requestInfo) {
+        try {
+            WSConfiguration myConfig = new WSConfiguration();
 
-        String host = "http://192.168.1.67";                    //"http://10.20.205.248";//readLineRequired("Host [e.g. https://localhost/]");
-        // todo read from file
-        boolean isValidUser = (requestInfo[0].equals("11") && requestInfo[1].equals("11"));
-        String newKnock = host + "/usid=" + requestInfo[0] + "?ppid=" + requestInfo[1] + "?isvalid=" + isValidUser + "/";
-        WSConnection myConnection = new WSConnection(newKnock);
-        LOGGER.info(myConnection.getActionToBeTaken());
-        myConnection.sendRequest();
+            URL bundledConfigLocation = ClassLoader
+                    .getSystemResource("config/bundled-webspa-config.properties");
 
-        // is the connection HTTPS
-        if (myConnection.isHttps()) {
-            try {
+            FileInputStream in = new FileInputStream(new File(bundledConfigLocation.toURI()));
+            Properties configProperties = new Properties();
+            configProperties.load(in);
+            in.close();
 
-                LOGGER.info(myConnection.getCertSHA1Hash());
+            String serverURL = WSUtil.readURL();//"http://192.168.1.64";                    //configProperties.getProperty(WSConstants.SERVER_IP);//"http://10.20.205.248";//readLineRequired("Host [e.g. https://localhost/]");
+            // todo read from file
+            boolean isValidUser = (requestInfo[0].equals("11") && requestInfo[1].equals("11"));
+            String newKnock = serverURL + "/usid=" + requestInfo[0] + "?ppid=" + requestInfo[1] + "?isvalid=" + isValidUser + "/";
+            WSConnection myConnection = new WSConnection(newKnock);
+//            LOGGER.info(myConnection.getActionToBeTaken());
+            myConnection.sendRequest();
 
-            } catch (NullPointerException npEx) {
+            // is the connection HTTPS
+            if (myConnection.isHttps()) {
+                try {
 
-                LOGGER.info("Couldn't get the SHA1 hash of the server certificate - probably a self signed certificate.");
+                    LOGGER.info(myConnection.getCertSHA1Hash());
 
-                if (!WSUtil.hasMinJreRequirements(1, 7)) {
-                    LOGGER.error("Be sure to run WebSpa with a JRE 1.7 or greater.");
-                } else {
-                    LOGGER.error("An exception was raised when reading the server certificate.");
-                    npEx.printStackTrace();
+                } catch (NullPointerException npEx) {
+
+                    LOGGER.info("Couldn't get the SHA1 hash of the server certificate - probably a self signed certificate.");
+
+                    if (!WSUtil.hasMinJreRequirements(1, 7)) {
+                        LOGGER.error("Be sure to run WebSpa with a JRE 1.7 or greater.");
+                    } else {
+                        LOGGER.error("An exception was raised when reading the server certificate.");
+                        npEx.printStackTrace();
+                    }
                 }
-            }
 
 //                final String trustChoice = readLineOptional("Continue connecting [Y/n]");
 //
 //                if (WSUtil.isAnswerPositive(trustChoice) || sendChoice.isEmpty()) {
-            myConnection.sendRequest();
-            LOGGER.info(myConnection.responseMessage());
-            LOGGER.info("HTTPS Response Code: {}", myConnection.responseCode());
+                myConnection.sendRequest();
+                LOGGER.info(myConnection.responseMessage());
+                LOGGER.info("HTTPS Response Code: {}", myConnection.responseCode());
 
-        } else {
+            } else {
 
-            myConnection.sendRequest();
-            LOGGER.info("--- response message: " + myConnection.responseMessage());
-            LOGGER.info("--- HTTP Response Code: {}", myConnection.responseCode());
+                myConnection.sendRequest();
+                LOGGER.info("--- response message: " + myConnection.responseMessage());
+                LOGGER.info("--- HTTP Response Code: {}", myConnection.responseCode());
 
+            }
+        } catch (IOException ex) {
+            java.util.logging.Logger.getLogger(WSCheckerListener.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (URISyntaxException ee) {
+            java.util.logging.Logger.getLogger(WSCheckerListener.class.getName()).log(Level.SEVERE, null, ee);
+            ee.printStackTrace();
         }
 
         return false;
@@ -137,4 +164,5 @@ public class WSCheckerListener extends TailerListenerAdapter {
 
     }
 
+    
 }

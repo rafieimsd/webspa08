@@ -1,5 +1,8 @@
 package net.seleucus.wsp.server.commands;
 
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
 import java.util.Date;
 import java.util.Random;
 import net.seleucus.wsp.console.WSConsole;
@@ -26,8 +29,8 @@ public class WSUserAdd extends WSCommandOption {
         do {
 
 //            passSeq = myServer.readPasswordRequired("Enter the New User's Pass-Phrase");
-            int counter = 10;//readLineRequiredInt("Enter the number of passwords you want:", 1, 20);
-            int lenght = 6;//readLineRequiredInt("Enter the lenght of passwords you want:", 6, 12);
+            int counter = myServer.readLineRequiredInt("Enter the number of passwords you want:", 1, 20000);
+            int lenght = myServer.readLineRequiredInt("Enter the lenght of passwords you want:", 6, 12);
             passSeq = generatePassphraseSet(counter, lenght);
 //            passPhraseInUse = myServer.getWSDatabase().passPhrases.isPassPhraseInUse(passSeq);
 
@@ -77,7 +80,7 @@ public class WSUserAdd extends WSCommandOption {
     private String[] generatePassphraseSet(int counter, int lenght) {
 
         String passPhraseSet[] = new String[counter];
-        boolean firstPass=true;
+        boolean firstPass = true;
         for (int i = 0; i < counter; i++) {
             String tempPass = "";
             char tempChar = 'x';
