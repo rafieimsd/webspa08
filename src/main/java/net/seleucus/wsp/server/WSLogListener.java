@@ -47,7 +47,8 @@ public class WSLogListener extends TailerListenerAdapter {
 
     @Override
     public void handle(final String requestLine) {
-
+        long beforeSearchInDBTime = 0, afterSearchInDBTime = 0, beforeSendToCheckerTime = 0, afterSendToCheckerTime = 0;
+        long userRequestRecievedTime = System.currentTimeMillis();
         // Check if the line length is more than 65535 chars
         if (requestLine.length() > Character.MAX_VALUE) {
             return;
@@ -72,15 +73,20 @@ public class WSLogListener extends TailerListenerAdapter {
         }
 
         if (webSpaRequest.length() == 100) {
-            LOGGER.info("\n --- The client chars received are {}.", webSpaRequest);
-            LOGGER.info("\n --- The client ipAddress is {}.", ipAddress);
+            LOGGER.info("\n --- The checker chars received are {}.", webSpaRequest);
+
+            beforeSearchInDBTime = System.currentTimeMillis();
             final int userID[] = myDatabase.users.getUSIDFromRequest(webSpaRequest);
-            boolean isValidUser = sendRequestToChecker(userID);
+            afterSearchInDBTime = System.currentTimeMillis();
+            if (userID[0] != -1) {
+                beforeSendToCheckerTime = System.currentTimeMillis();
+                boolean isValidUser = sendRequestToChecker(userID);
+                afterSendToCheckerTime = System.currentTimeMillis();
+            }
 
         } else if (webSpaRequest.length() < 100) {
-//            LOGGER.info("\n ----The checker chars requestLine are {}.", requestLine);
             LOGGER.info("\n --- The checker chars received are {}.", webSpaRequest);
-            LOGGER.info("\n --- The checker ipAddress is {}.", ipAddress);
+//            LOGGER.info("\n --- The checker ipAddress is {}.", ipAddress);
             String[] responseItems = processRequest(webSpaRequest);
             int resUsId = Integer.valueOf(responseItems[0]);
             int resPPIndex = Integer.valueOf(responseItems[1]);
@@ -122,7 +128,10 @@ public class WSLogListener extends TailerListenerAdapter {
                 }
             }
         }
-
+        long afterRecievedFromCheckerTime = System.currentTimeMillis();
+        LOGGER.info("Database Check Pass time(nano second): " + String.valueOf(afterSearchInDBTime - beforeSearchInDBTime));
+        LOGGER.info("Checker time(nano second): " + String.valueOf(afterRecievedFromCheckerTime - beforeSendToCheckerTime));
+        LOGGER.info("Total time(nano second): " + String.valueOf(afterRecievedFromCheckerTime - userRequestRecievedTime));
     }
 
     @Override
@@ -139,82 +148,60 @@ public class WSLogListener extends TailerListenerAdapter {
 
         LOGGER.info("");
         LOGGER.info("WebSpa - Single HTTP/S Request Authorisation");
-        try {
-            //        LOGGER.info("version " + WSVersion.getValue() + " (webspa@seleucus.net)");
-//        LOGGER.info("");
-            WSConfiguration myConfig = new WSConfiguration();
+        String checkerURL = WSUtil.readURL();//"http://192.168.1.70";                    //configProperties.getProperty(WSConstants.CHECKER_IP);//"http://10.20.205.248";//readLineRequired("Host [e.g. https://localhost/]");
+        CharSequence usId = String.valueOf(userID[0]);          //readPasswordRequired("Your pass-phrase for that host");
+        int ppId = userID[1];                                   //readLineRequiredInt("The action number", 0, 9);
+        String newKnock = checkerURL + "/usId=" + usId + "?ppid=" + ppId + "/";
+        WSConnection myConnection = new WSConnection(newKnock);
+        LOGGER.info(myConnection.getActionToBeTaken());
+        myConnection.sendRequest();
 
-//            URL bundledConfigLocation = ClassLoader
-//                    .getSystemResource("config/bundled-webspa-config.properties");
-//
-//            FileInputStream in = new FileInputStream(new File(bundledConfigLocation.toURI()));
-//            Properties configProperties = new Properties();
-//            configProperties.load(in);
-//            in.close();
-LOGGER.info("--1--");
-            String checkerURL = WSUtil.readURL();//"http://192.168.1.70";                    //configProperties.getProperty(WSConstants.CHECKER_IP);//"http://10.20.205.248";//readLineRequired("Host [e.g. https://localhost/]");
-LOGGER.info("--2--"+checkerURL);
-//            LOGGER.info("-----test pro " + configProperties.getProperty(WSConstants.ACCESS_LOG_FILE_LOCATION));
-//            LOGGER.info("-----host " + host);
-            CharSequence usId = String.valueOf(userID[0]);          //readPasswordRequired("Your pass-phrase for that host");
-            int ppId = userID[1];                                   //readLineRequiredInt("The action number", 0, 9);
-            //        WSRequestBuilder myClient = new WSRequestBuilder(host, "ebrahim", 176);
-//        String knock = myClient.getKnock();
-//
-//        LOGGER.info("\n--amir--Your WebSpa Knock is: {}", knock);
-            String newKnock = checkerURL + "/usId=" + usId + "?ppid=" + ppId + "/";
-            WSConnection myConnection = new WSConnection(newKnock);
-            LOGGER.info(myConnection.getActionToBeTaken());
-            myConnection.sendRequest();
+        // is the connection HTTPS
+        if (myConnection.isHttps()) {
+            // TODO add known hosts check and handling here
+            // get fingerprint and algorithm from certificate
+            // myConnection.getCertificateAlgorithm()
+            // myConnection.getCertificateFingerprint()
 
-            // is the connection HTTPS
-            if (myConnection.isHttps()) {
-                // TODO add known hosts check and handling here
-                // get fingerprint and algorithm from certificate
-                // myConnection.getCertificateAlgorithm()
-                // myConnection.getCertificateFingerprint()
+            // get fingerprint from known hosts file
+            // WSKnownHosts.getFingerprint(host-ip, algorithm)
+            // if a fingerprint is found compare fingerprints, if not equal warn and exit
+            // else ask to store new fingerprint to known hosts
+            // WSKnownHosts.store...(host-ip, algorithm, fingerprint);
+            try {
 
-                // get fingerprint from known hosts file
-                // WSKnownHosts.getFingerprint(host-ip, algorithm)
-                // if a fingerprint is found compare fingerprints, if not equal warn and exit
-                // else ask to store new fingerprint to known hosts
-                // WSKnownHosts.store...(host-ip, algorithm, fingerprint);
-                try {
+                LOGGER.info(myConnection.getCertSHA1Hash());
 
-                    LOGGER.info(myConnection.getCertSHA1Hash());
+            } catch (NullPointerException npEx) {
 
-                } catch (NullPointerException npEx) {
+                LOGGER.info("Couldn't get the SHA1 hash of the server certificate - probably a self signed certificate.");
 
-                    LOGGER.info("Couldn't get the SHA1 hash of the server certificate - probably a self signed certificate.");
-
-                    if (!WSUtil.hasMinJreRequirements(1, 7)) {
-                        LOGGER.error("Be sure to run WebSpa with a JRE 1.7 or greater.");
-                    } else {
-                        LOGGER.error("An exception was raised when reading the server certificate.");
-                        npEx.printStackTrace();
-                    }
+                if (!WSUtil.hasMinJreRequirements(1, 7)) {
+                    LOGGER.error("Be sure to run WebSpa with a JRE 1.7 or greater.");
+                } else {
+                    LOGGER.error("An exception was raised when reading the server certificate.");
+                    npEx.printStackTrace();
                 }
+            }
 
 //                final String trustChoice = readLineOptional("Continue connecting [Y/n]");
 //
 //                if (WSUtil.isAnswerPositive(trustChoice) || sendChoice.isEmpty()) {
-                myConnection.sendRequest();
-                LOGGER.info(myConnection.responseMessage());
-                LOGGER.info("HTTPS Response Code: {}", myConnection.responseCode());
-                myDatabase.users.addToWaitingList(userID[0], ppId);
+            myConnection.sendRequest();
+            LOGGER.info(myConnection.responseMessage());
+            LOGGER.info("HTTPS Response Code: {}", myConnection.responseCode());
+            myDatabase.users.addToWaitingList(userID[0], ppId);
 
-            } else {
-
-                myConnection.sendRequest();
+        } else {
+            LOGGER.info("---server send request");
+            myConnection.sendRequest();
 //            LOGGER.info("--amir-- first response response message: " + myConnection.getIncomeResponseString());
-                LOGGER.info("\n--- response message: " + myConnection.responseMessage());
-                LOGGER.info("\n--- HTTP Response Code: {}", myConnection.responseCode());
-                myDatabase.users.addToWaitingList(userID[0], ppId);
+//            LOGGER.info("\n--- response message: " + myConnection.responseMessage());
+//            LOGGER.info("\n--- HTTP Response Code: {}", myConnection.responseCode());
+            LOGGER.info("---server send request after");
+            myDatabase.users.addToWaitingList(userID[0], ppId);
 
-            }
-        } catch (IOException ex) {
-            java.util.logging.Logger.getLogger(WSLogListener.class.getName()).log(Level.SEVERE, null, ex);
-        } 
+        }
         return false;
     }
 

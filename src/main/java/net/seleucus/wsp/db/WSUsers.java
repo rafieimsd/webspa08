@@ -214,7 +214,6 @@ public class WSUsers {
 
     }
 
-    
     public synchronized boolean getActivationStatus(int usID) {
 
         boolean activationStatus = false;
@@ -299,8 +298,8 @@ public class WSUsers {
             String sql = "INSERT INTO USERS_VALIDATION_QUEUE (USID,P_INDEX,IS_VALID,IS_WAITING, CREATED) VALUES ("
                     + "?,?,?,?, CURRENT_TIMESTAMP);";
 
-            LOGGER.info("Adding RECORD {} to the INTO USERS_VALIDATION_QUEUE...", usId);
-
+//            LOGGER.info("Adding RECORD {} to the INTO USERS_VALIDATION_QUEUE...", usId);
+            LOGGER.info(".");
             PreparedStatement ps = wsConnection.prepareStatement(sql);
 //            psUsers.setString(1, passSeq.toString());
             ps.setString(1, String.valueOf(usId));
@@ -312,6 +311,7 @@ public class WSUsers {
             ps.close();
 
             LOGGER.info("record {} added.", usId);
+            LOGGER.info("..");
             result = true;
         } catch (Exception ee) {
             result = false;
@@ -325,8 +325,8 @@ public class WSUsers {
             String sql = "update  USERS_VALIDATION_QUEUE set IS_VALID=?,IS_WAITING=?,MODIFIED=CURRENT_TIMESTAMP "
                     + " WHERE USID=? AND P_INDEX=? AND IS_WAITING=TRUE;";
 
-            LOGGER.info("UPDATING RECORD {} OF the INTO USERS_VALIDATION_QUEUE...", usId);
-
+//            LOGGER.info("UPDATING RECORD {} OF the INTO USERS_VALIDATION_QUEUE...", usId);
+            LOGGER.info(".");
             PreparedStatement ps = wsConnection.prepareStatement(sql);
 //            psUsers.setString(1, passSeq.toString());
             ps.setString(1, String.valueOf(isValid));
@@ -337,7 +337,7 @@ public class WSUsers {
 
             ps.close();
 
-            LOGGER.info("record {} updated.", usId);
+            LOGGER.info("user {} result:{}", usId, isValid);
             result = true;
         } catch (Exception ee) {
             ee.printStackTrace();

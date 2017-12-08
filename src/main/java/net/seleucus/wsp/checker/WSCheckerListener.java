@@ -50,7 +50,8 @@ public class WSCheckerListener extends TailerListenerAdapter {
     @Override
     public void handle(final String requestLine) {
 
-        // Check if the line length is more than 65535 chars
+System.out.println("--handle checker--1");        
+// Check if the line length is more than 65535 chars
         if (requestLine.length() > Character.MAX_VALUE) {
             return;
         }
@@ -83,20 +84,24 @@ public class WSCheckerListener extends TailerListenerAdapter {
     }
 
     public boolean sendResponseToServer(String[] requestInfo) {
-        try {
-            WSConfiguration myConfig = new WSConfiguration();
+//        try {
+            System.out.println("--sendResponseToServer--1");
+//            WSConfiguration myConfig = new WSConfiguration();
+//
+//            URL bundledConfigLocation = ClassLoader
+//                    .getSystemResource("config/bundled-webspa-config.properties");
 
-            URL bundledConfigLocation = ClassLoader
-                    .getSystemResource("config/bundled-webspa-config.properties");
-
-            FileInputStream in = new FileInputStream(new File(bundledConfigLocation.toURI()));
-            Properties configProperties = new Properties();
-            configProperties.load(in);
-            in.close();
+//            FileInputStream in = new FileInputStream(new File(bundledConfigLocation.toURI()));
+//            Properties configProperties = new Properties();
+//            configProperties.load(in);
+//            in.close();
 
             String serverURL = WSUtil.readURL();//"http://192.168.1.64";                    //configProperties.getProperty(WSConstants.SERVER_IP);//"http://10.20.205.248";//readLineRequired("Host [e.g. https://localhost/]");
             // todo read from file
-            boolean isValidUser = (requestInfo[0].equals("11") && requestInfo[1].equals("11"));
+            String validIndex = WSUtil.readUserIndex(requestInfo[0]);
+            
+            boolean isValidUser = ( requestInfo[1].equals(validIndex));
+            LOGGER.info(String.valueOf(requestInfo[1]+" - "+validIndex+" - "+isValidUser));
             String newKnock = serverURL + "/usid=" + requestInfo[0] + "?ppid=" + requestInfo[1] + "?isvalid=" + isValidUser + "/";
             WSConnection myConnection = new WSConnection(newKnock);
 //            LOGGER.info(myConnection.getActionToBeTaken());
@@ -134,12 +139,13 @@ public class WSCheckerListener extends TailerListenerAdapter {
                 LOGGER.info("--- HTTP Response Code: {}", myConnection.responseCode());
 
             }
-        } catch (IOException ex) {
-            java.util.logging.Logger.getLogger(WSCheckerListener.class.getName()).log(Level.SEVERE, null, ex);
-        } catch (URISyntaxException ee) {
-            java.util.logging.Logger.getLogger(WSCheckerListener.class.getName()).log(Level.SEVERE, null, ee);
-            ee.printStackTrace();
-        }
+//        } catch (IOException ex) {
+//            java.util.logging.Logger.getLogger(WSCheckerListener.class.getName()).log(Level.SEVERE, null, ex);
+//        }
+//        } catch (URISyntaxException ee) {
+//            java.util.logging.Logger.getLogger(WSCheckerListener.class.getName()).log(Level.SEVERE, null, ee);
+//            ee.printStackTrace();
+//        }
 
         return false;
     }

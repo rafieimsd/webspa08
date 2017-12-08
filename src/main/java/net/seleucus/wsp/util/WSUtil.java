@@ -43,32 +43,69 @@ public class WSUtil {
     }
 
     public static String readURL() {
-        System.out.println("--1.2--");
-        String fileName=configProperties.getProperty(WSConstants.FILENAME);
-        System.out.println("--1.7--"+fileName);
-        String ip = readFile(fileName);
-        System.out.println("--1.3--" + ip);
+//        System.out.println("--1.2--");
+        String fileName = "/webspa/var.txt";//configProperties.getProperty(WSConstants.FILENAME);
+        String ip = readIp(fileName);
         String URL = "http://" + ip;
+//        System.out.println("--read IP-4--" + URL);
+
         return URL;
     }
 
-    public static String readFile(final String FILENAME) {
-        String sCurrentLine = "";
-
+    public static String readIp(final String FILENAME) {
+        String sCurrentLine = "", ip = "";
+        boolean ipDetected = false;
+//        System.out.println("--read IP--");
+        int co = 1;
         try {
-            System.out.println("--1.2.1--" + FILENAME);
             BufferedReader br = new BufferedReader(new FileReader(FILENAME));
-            sCurrentLine = br.readLine();
-            if (sCurrentLine.length() > 15 || sCurrentLine.length() < 7) {
-                throw new IOException();
+//            sCurrentLine = br.readLine();
+            while ((sCurrentLine = br.readLine()) != null && !ipDetected) {
+                if (sCurrentLine.startsWith("ip:")) {
+                    if (sCurrentLine.length() > 18 || sCurrentLine.length() < 10) {
+                        System.out.println("--read IP-lenght- " + sCurrentLine.length());
+                        throw new IOException();
+                    } else {
+                        ip = sCurrentLine.substring(3);
+                        ipDetected = true;
+                    }
+                }
             }
-//            while ((sCurrentLine = br.readLine()) != null) {
-//                System.out.println("----- test reading from file: " + sCurrentLine);
-//            }
             br.close();
         } catch (IOException e) {
             e.printStackTrace();
         }
-        return sCurrentLine;
+        return ip;
+    }
+
+    public static String readUserIndex(String usId) {
+        String sCurrentLine = "",result="";
+        boolean idDetected = false;
+        String fileName = "/webspa/var.txt";
+        System.out.println("--check pass--");
+        try {
+//            System.out.println("--1.2.1--" + FILENAME);
+            BufferedReader br = new BufferedReader(new FileReader(fileName));
+            while ((sCurrentLine = br.readLine()) != null && !idDetected) {
+//                System.out.println("----- test reading from file: " + sCurrentLine);
+                if (sCurrentLine.startsWith("user:")) {
+
+                    if (usId.equals(sCurrentLine.substring(5, sCurrentLine.indexOf(",")))) {
+                        result=sCurrentLine.substring(sCurrentLine.indexOf(",")+1);
+                        idDetected = true;
+                    }
+                }
+            }
+            if (!idDetected) {
+                throw new SecurityException();
+            }
+            br.close();
+        } catch (IOException e) {
+
+            e.printStackTrace();
+        } catch (SecurityException e) {
+            System.out.println("--ERROR!! user " + usId + " not found in file!");
+        }
+        return result;
     }
 }
