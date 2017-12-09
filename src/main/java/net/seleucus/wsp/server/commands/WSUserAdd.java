@@ -94,12 +94,12 @@ public class WSUserAdd extends WSCommandOption {
 //                System.out.println("tempPass: " + tempPass);
 
             }
-            if (i==(counter-2)) {   //todo   amir
-                passPhraseSet[i] = "pass";
-                firstPass = false;
-            } else {
+//            if (i==(counter-2)) {   //todo   amir
+//                passPhraseSet[i] = "pass";
+//                firstPass = false;
+//            } else {
                 passPhraseSet[i] = tempPass;
-            }
+//            }
 //            passPhraseSet[i] = tempPass;
             System.out.println("tempPass" + (i + 1) + ": " + tempPass);
 
