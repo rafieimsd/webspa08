@@ -47,8 +47,8 @@ public class WSLogListener extends TailerListenerAdapter {
 
     @Override
     public void handle(final String requestLine) {
-        long beforeSearchInDBTime = 0, afterSearchInDBTime = 0, beforeSendToCheckerTime = 0, afterSendToCheckerTime = 0;
-        long userRequestRecievedTime = System.currentTimeMillis();
+        long beforeSearchInDBMiliS = 0, afterSearchInDBMiliS = 0, beforeSearchInDBNanoS = 0, afterSearchInDBNanoS;
+//        long userRequestRecievedTime = System.currentTimeMillis();
         // Check if the line length is more than 65535 chars
         if (requestLine.length() > Character.MAX_VALUE) {
             return;
@@ -73,19 +73,23 @@ public class WSLogListener extends TailerListenerAdapter {
         }
 
         if (webSpaRequest.length() == 100) {
-            LOGGER.info("\n --- The checker chars received are {}.", webSpaRequest);
+            LOGGER.info(" --- The Client chars received are {}.", webSpaRequest);
 
-            beforeSearchInDBTime = System.currentTimeMillis();
+            beforeSearchInDBMiliS = System.currentTimeMillis();
+            beforeSearchInDBNanoS = System.nanoTime();
             final int userID[] = myDatabase.users.getUSIDFromRequest(webSpaRequest);
-            afterSearchInDBTime = System.currentTimeMillis();
+            afterSearchInDBNanoS = System.nanoTime();
+            afterSearchInDBMiliS = System.currentTimeMillis();
+            LOGGER.info("Database Check Pass time(nano second): " + String.valueOf(afterSearchInDBNanoS - beforeSearchInDBNanoS));
+            LOGGER.info("Database Check Pass time(nano second): " + String.valueOf(afterSearchInDBMiliS - beforeSearchInDBMiliS));
             if (userID[0] != -1) {
-                beforeSendToCheckerTime = System.currentTimeMillis();
+//                beforeSendToCheckerTime = System.currentTimeMillis();
                 boolean isValidUser = sendRequestToChecker(userID);
-                afterSendToCheckerTime = System.currentTimeMillis();
+//                afterSendToCheckerTime = System.currentTimeMillis();
             }
 
         } else if (webSpaRequest.length() < 100) {
-            LOGGER.info("\n --- The checker chars received are {}.", webSpaRequest);
+            LOGGER.info(" --- The Checker chars received are {}.", webSpaRequest);
 //            LOGGER.info("\n --- The checker ipAddress is {}.", ipAddress);
             String[] responseItems = processRequest(webSpaRequest);
             int resUsId = Integer.valueOf(responseItems[0]);
@@ -129,9 +133,9 @@ public class WSLogListener extends TailerListenerAdapter {
             }
         }
         long afterRecievedFromCheckerTime = System.currentTimeMillis();
-        LOGGER.info("Database Check Pass time(nano second): " + String.valueOf(afterSearchInDBTime - beforeSearchInDBTime));
-        LOGGER.info("Checker time(nano second): " + String.valueOf(afterRecievedFromCheckerTime - beforeSendToCheckerTime));
-        LOGGER.info("Total time(nano second): " + String.valueOf(afterRecievedFromCheckerTime - userRequestRecievedTime));
+        
+//        LOGGER.info("Checker time(nano second): " + String.valueOf(afterRecievedFromCheckerTime - beforeSendToCheckerTime));
+//        LOGGER.info("Total time(nano second): " + String.valueOf(afterRecievedFromCheckerTime - userRequestRecievedTime));
     }
 
     @Override
@@ -195,10 +199,10 @@ public class WSLogListener extends TailerListenerAdapter {
         } else {
             LOGGER.info("---server send request");
             myConnection.sendRequest();
-//            LOGGER.info("--amir-- first response response message: " + myConnection.getIncomeResponseString());
-//            LOGGER.info("\n--- response message: " + myConnection.responseMessage());
-//            LOGGER.info("\n--- HTTP Response Code: {}", myConnection.responseCode());
-            LOGGER.info("---server send request after");
+
+            LOGGER.info("--- response message: " + myConnection.responseMessage());
+            LOGGER.info("--- HTTP Response Code: {}", myConnection.responseCode());
+//            LOGGER.info("---server send request after");
             myDatabase.users.addToWaitingList(userID[0], ppId);
 
         }

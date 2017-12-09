@@ -63,7 +63,7 @@ public class WSUtil {
             while ((sCurrentLine = br.readLine()) != null && !ipDetected) {
                 if (sCurrentLine.startsWith("ip:")) {
                     if (sCurrentLine.length() > 18 || sCurrentLine.length() < 10) {
-                        System.out.println("--read IP-lenght- " + sCurrentLine.length());
+//                        System.out.println("--read IP-lenght- " + sCurrentLine.length());
                         throw new IOException();
                     } else {
                         ip = sCurrentLine.substring(3);

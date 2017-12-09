@@ -182,6 +182,7 @@ public class WSUsers {
         final String sqlPassPhrases = "SELECT PASSPHRASE, USID,PPID FROM PASSPHRASES;";
 
         try {
+            boolean recordFound = false;
             Statement stmt = wsConnection.createStatement();
             ResultSet rs = stmt.executeQuery(sqlPassPhrases);
 
@@ -192,7 +193,7 @@ public class WSUsers {
                 final int dbPPID = rs.getInt(3);
                 CharSequence rawPassword = CharBuffer.wrap(dbPassPhraseArray);
                 if (WebSpaEncoder.matches(rawPassword, webSpaRequest)) {
-
+                    recordFound = true;
                     output[0] = dbUSID;
                     output[1] = dbPPID;
                     break;
@@ -200,7 +201,12 @@ public class WSUsers {
                 }
 
             }	// while loop...
+            if (recordFound) {
+                LOGGER.error("---- passphrase is correct " + output[1]);
+            } else {
+                LOGGER.error("---- passphrase is incorrect!!! ");
 
+            }
             rs.close();
             stmt.close();
 

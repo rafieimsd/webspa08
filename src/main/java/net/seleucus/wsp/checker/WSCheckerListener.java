@@ -50,7 +50,7 @@ public class WSCheckerListener extends TailerListenerAdapter {
     @Override
     public void handle(final String requestLine) {
 
-System.out.println("--handle checker--1");        
+//System.out.println("--handle checker--1");        
 // Check if the line length is more than 65535 chars
         if (requestLine.length() > Character.MAX_VALUE) {
             return;
@@ -85,7 +85,7 @@ System.out.println("--handle checker--1");
 
     public boolean sendResponseToServer(String[] requestInfo) {
 //        try {
-            System.out.println("--sendResponseToServer--1");
+//            System.out.println("--sendResponseToServer--1");
 //            WSConfiguration myConfig = new WSConfiguration();
 //
 //            URL bundledConfigLocation = ClassLoader
